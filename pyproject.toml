@@ -1,0 +1,21 @@
+[project]
+name = "slack-dual-mode-data-ingestion-service"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "duanechan", email = "2223483@slu.edu.ph" }
+]
+requires-python = ">=3.14"
+dependencies = []
+
+[project.scripts]
+slack-dual-mode-data-ingestion-service = "slack_dual_mode_data_ingestion_service:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "app"
+module-root = "src"
