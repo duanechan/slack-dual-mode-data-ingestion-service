@@ -1,0 +1,90 @@
+{
+    "ok": true,
+    "messages": [
+        {
+            "user": "U0C6AEJKELC",
+            "type": "message",
+            "ts": "1790921528.903729",
+            "edited": { "user": "U0C6AEJKELC", "ts": "1790921538.000000" },
+            "client_msg_id": "1c362cd5-abb2-4203-8678-bc9b592d479d",
+            "text": "Life's A Bitch by Nas",
+            "team": "T0C715C352L",
+            "thread_ts": "1790921528.903729",
+            "reply_count": 2,
+            "reply_users_count": 1,
+            "latest_reply": "1790925182.929679",
+            "reply_users": ["U0C6AEJKELC"],
+            "is_locked": false,
+            "subscribed": false,
+            "blocks": [
+                {
+                    "type": "rich_text",
+                    "block_id": "LoHVR",
+                    "elements": [
+                        {
+                            "type": "rich_text_section",
+                            "elements": [
+                                {
+                                    "type": "text",
+                                    "text": "Life's A Bitch by Nas"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "reactions": [
+                { "name": "raised_hands", "users": ["U0C6AEJKELC"], "count": 1 }
+            ]
+        },
+        {
+            "user": "U0C6AEJKELC",
+            "type": "message",
+            "ts": "1790925160.657469",
+            "client_msg_id": "1e502a24-8ac0-43b3-9920-b9b8e65f94d1",
+            "text": "Goated song",
+            "team": "T0C715C352L",
+            "thread_ts": "1790921528.903729",
+            "parent_user_id": "U0C6AEJKELC",
+            "blocks": [
+                {
+                    "type": "rich_text",
+                    "block_id": "djKFR",
+                    "elements": [
+                        {
+                            "type": "rich_text_section",
+                            "elements": [
+                                { "type": "text", "text": "Goated song" }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "user": "U0C6AEJKELC",
+            "type": "message",
+            "ts": "1790925182.929679",
+            "client_msg_id": "5d5f405d-e004-443b-bcac-8b81305bff74",
+            "text": "also Nas Is Like",
+            "team": "T0C715C352L",
+            "thread_ts": "1790921528.903729",
+            "parent_user_id": "U0C6AEJKELC",
+            "blocks": [
+                {
+                    "type": "rich_text",
+                    "block_id": "oPIjJ",
+                    "elements": [
+                        {
+                            "type": "rich_text_section",
+                            "elements": [
+                                { "type": "text", "text": "also Nas Is Like" }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "has_more": false
+}
