@@ -34,6 +34,9 @@ dist/
 .vscode/
 .zed/
 
+# Scratch scripts
+scratch/
+
 # OS files
 .DS_Store
 Thumbs.db

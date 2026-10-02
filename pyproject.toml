@@ -7,7 +7,12 @@ authors = [
     { name = "duanechan", email = "2223483@slu.edu.ph" }
 ]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "minio>=7.2.20",
+    "pyarrow>=25.0.1",
+    "python-dotenv>=1.2.4",
+    "slack-sdk>=3.45.0",
+]
 
 [project.scripts]
 slack-dual-mode-data-ingestion-service = "slack_dual_mode_data_ingestion_service:main"
