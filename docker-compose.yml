@@ -1,0 +1,50 @@
+services:
+    minio-init:
+        image: cgr.dev/chainguard/minio:latest
+        container_name: slack-ingestion-service-minio-init
+        depends_on:
+            minio:
+                condition: service_healthy
+        environment:
+            MC_HOST_local: http://minioadmin:minioadmin@minio:9000
+        entrypoint: ["mc", "mb", "--ignore-existing", "local/slack-ingestion-service-dev"]
+        restart: "no"
+
+    minio:
+        image: cgr.dev/chainguard/minio:latest
+        container_name: slack-ingestion-service-minio
+        ports:
+            - "9000:9000"
+            - "9001:9001"
+        environment:
+            MINIO_ROOT_USER: minioadmin
+            MINIO_ROOT_PASSWORD: minioadmin
+            MC_HOST_local: http://minioadmin:minioadmin@localhost:9000
+        command: server /data --console-address ":9001"
+        volumes:
+            - minio-data:/data
+        healthcheck:
+            test:
+                ["CMD", "mc", "ready", "local"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+    clickhouse:
+        image: clickhouse/clickhouse-server:latest
+        container_name: slack-ingestion-service-clickhouse
+        ports:
+            - "8123:8123"
+        environment:
+            CLICKHOUSE_USER: default
+            CLICKHOUSE_PASSWORD: default
+            CLICKHOUSE_DB: slack
+        volumes:
+            - clickhouse-data:/var/lib/clickhouse
+        ulimits:
+            nofile:
+                soft: 262144
+                hard: 262144
+volumes:
+    minio-data:
+    clickhouse-data:
