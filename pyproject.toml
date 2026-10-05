@@ -10,6 +10,7 @@ requires-python = ">=3.14"
 dependencies = [
     "minio>=7.2.20",
     "pyarrow>=25.0.1",
+    "pydantic-settings>=2.15.0",
     "python-dotenv>=1.2.4",
     "slack-sdk>=3.45.0",
 ]
