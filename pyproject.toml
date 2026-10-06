@@ -13,6 +13,7 @@ dependencies = [
     "pydantic-settings>=2.15.0",
     "python-dotenv>=1.2.4",
     "slack-sdk>=3.45.0",
+    "tzdata>=2026.5",
 ]
 
 [project.scripts]
