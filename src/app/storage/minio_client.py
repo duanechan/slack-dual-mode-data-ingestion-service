@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Any
+from typing import Any, Literal
 
 from minio import Minio
 
@@ -17,8 +17,21 @@ def group_rows_by_message_date(
     return grouped
 
 
-def build_object_name_from_channel(channel_id: str) -> str:
-    return ""
+def build_object_name(
+    *,
+    mode: Literal["historical", "realtime"],
+    channel_id: str,
+    message_date: date,
+    oldest_ts: str,
+    newest_ts: str,
+    content_hash: str,
+) -> str:
+    folder = (
+        f"slack/{mode}"
+        + f"/channel_id={channel_id}"
+        + f"/message_date={message_date.strftime('%Y-%m-%d')}"
+    )
+    return f"{folder}/{oldest_ts}_{newest_ts}_{content_hash}.parquet"
 
 
 class MinioClient:
