@@ -88,3 +88,49 @@ def test_backfill_recovers_from_crash_between_objects(ingested_at: datetime):
         for ts in pq.read_table(io.BytesIO(body)).column("ts").to_pylist()
     }
     assert seen == {"1700000000.000100", "1700086400.000200"}
+
+
+def test_rerun_after_channel_change_adds_objects(ingested_at: datetime):
+    def msg(n: int) -> dict:
+        return {"ts": f"1700000000.{n:06d}", "text": f"m{n}"}
+
+    web = Mock(spec=WebClient)
+    stored: dict[str, bytes] = {}
+
+    def put_object(bucket_name, object_name, data, length):
+        stored[object_name] = data.read()
+
+    raw = Mock(spec=Minio)
+    raw.put_object.side_effect = put_object
+
+    def run(at: datetime) -> int:
+        service = IngestionService(
+            SlackClient(client=web), MinioClient(client=raw, bucket="b")
+        )
+        return service.backfill_channel(channel_id="C1", ingested_at=at, limit=2)
+
+    web.conversations_history.side_effect = [
+        {"messages": [msg(400), msg(300)], "response_metadata": {"next_cursor": "c2"}},
+        {"messages": [msg(200), msg(100)], "response_metadata": {"next_cursor": ""}},
+    ]
+    run(ingested_at)
+    first_run = set(stored)
+    assert len(first_run) == 2
+
+    web.conversations_history.side_effect = [
+        {"messages": [msg(500), msg(400)], "response_metadata": {"next_cursor": "c2"}},
+        {"messages": [msg(300), msg(200)], "response_metadata": {"next_cursor": "c3"}},
+        {"messages": [msg(100)], "response_metadata": {"next_cursor": ""}},
+    ]
+    run(ingested_at + timedelta(minutes=5))
+
+    assert first_run <= set(stored)
+    assert len(stored) == 5
+
+    all_ts = [
+        ts
+        for body in stored.values()
+        for ts in pq.read_table(io.BytesIO(body)).column("ts").to_pylist()
+    ]
+    assert len(set(all_ts)) == 5
+    assert len(all_ts) == 9
