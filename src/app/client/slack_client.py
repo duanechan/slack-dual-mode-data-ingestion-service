@@ -13,6 +13,7 @@ class SlackClient:
         channel_id: str,
         cursor: str | None = None,
         limit: int | None = None,
+        latest: str | None = None,
     ) -> Iterator[list[dict[str, Any]]]:
         next_cursor = cursor
         while True:
@@ -20,6 +21,8 @@ class SlackClient:
                 channel=channel_id,
                 cursor=next_cursor,
                 limit=limit,
+                latest=latest,
+                inclusive=False,
             )
 
             messages: list[dict[str, Any]] = res.get("messages", [])

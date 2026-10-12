@@ -1,6 +1,9 @@
-from datetime import datetime
+import io
+from datetime import datetime, timedelta
 from unittest.mock import Mock
 
+import pyarrow.parquet as pq
+import pytest
 from minio.api import Minio
 from slack_sdk import WebClient
 
@@ -9,7 +12,7 @@ from app.services.ingestion_service import IngestionService
 from app.storage.minio_client import MinioClient
 
 
-def test_backfill_channel(ingested_at: datetime):
+def test_backfill_channel(ingested_at: datetime, checkpoints: Mock):
     web = Mock(spec=WebClient)
     web.conversations_history.side_effect = [
         {
@@ -25,7 +28,7 @@ def test_backfill_channel(ingested_at: datetime):
     slack = SlackClient(client=web)
     minio = MinioClient(client=Mock(spec=Minio), bucket="b")
 
-    ingestion = IngestionService(slack, minio)
+    ingestion = IngestionService(slack, minio, checkpoints)
     assert (
         ingestion.backfill_channel(
             channel_id="#TEST-CHANNEL-ID",
@@ -36,14 +39,9 @@ def test_backfill_channel(ingested_at: datetime):
     )
 
 
-import io
-from datetime import timedelta
-
-import pyarrow.parquet as pq
-import pytest
-
-
-def test_backfill_recovers_from_crash_between_objects(ingested_at: datetime):
+def test_backfill_recovers_from_crash_between_objects(
+    ingested_at: datetime, checkpoints: Mock
+):
     web = Mock(spec=WebClient)
     web.conversations_history.return_value = {
         "messages": [
@@ -69,7 +67,9 @@ def test_backfill_recovers_from_crash_between_objects(ingested_at: datetime):
 
     def run(at: datetime) -> int:
         service = IngestionService(
-            SlackClient(client=web), MinioClient(client=raw, bucket="b")
+            SlackClient(client=web),
+            MinioClient(client=raw, bucket="b"),
+            checkpoints,
         )
         return service.backfill_channel(channel_id="C1", ingested_at=at, limit=2)
 
@@ -90,7 +90,9 @@ def test_backfill_recovers_from_crash_between_objects(ingested_at: datetime):
     assert seen == {"1700000000.000100", "1700086400.000200"}
 
 
-def test_rerun_after_channel_change_adds_objects(ingested_at: datetime):
+def test_rerun_after_channel_change_adds_objects(
+    ingested_at: datetime, checkpoints: Mock
+):
     def msg(n: int) -> dict:
         return {"ts": f"1700000000.{n:06d}", "text": f"m{n}"}
 
@@ -105,7 +107,9 @@ def test_rerun_after_channel_change_adds_objects(ingested_at: datetime):
 
     def run(at: datetime) -> int:
         service = IngestionService(
-            SlackClient(client=web), MinioClient(client=raw, bucket="b")
+            SlackClient(client=web),
+            MinioClient(client=raw, bucket="b"),
+            checkpoints,
         )
         return service.backfill_channel(channel_id="C1", ingested_at=at, limit=2)
 
