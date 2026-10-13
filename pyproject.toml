@@ -8,12 +8,14 @@ authors = [
 ]
 requires-python = ">=3.14"
 dependencies = [
+    "fastapi>=0.143.0",
     "minio>=7.2.20",
     "pyarrow>=25.0.1",
     "pydantic-settings>=2.15.0",
     "python-dotenv>=1.2.4",
     "slack-sdk>=3.45.0",
     "tzdata>=2026.5",
+    "uvicorn[standard]>=0.54.0",
 ]
 
 [project.scripts]

@@ -1,3 +1,5 @@
+import threading
+from collections.abc import Callable
 from datetime import datetime
 
 from app.client.slack_client import SlackClient
@@ -23,6 +25,8 @@ class IngestionService:
         channel_id: str,
         ingested_at: datetime,
         limit: int,
+        running: threading.Event | None = None,
+        on_page: Callable[[str, int], None] | None = None,
     ) -> int:
         total = 0
         latest = self._checkpoints.load(channel_id)
@@ -44,4 +48,8 @@ class IngestionService:
             oldest_ts, _ = ts_bounds(rows)
             self._checkpoints.save(channel_id=channel_id, oldest_ts=oldest_ts)
             total += len(rows)
+            if on_page is not None:
+                on_page(channel_id, len(rows))
+            if running is not None:
+                running.wait()
         return total
