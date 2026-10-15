@@ -1,10 +1,11 @@
 import io
+from datetime import date
 from typing import Any, Literal
 
 import pyarrow.parquet as pq
 from minio import Minio
 
-from app.parquet import rows_to_table
+from app.parquet import CHANNEL_SCHEMA, USER_SCHEMA, rows_to_table
 from app.storage.storage import (
     build_object_name,
     content_hash,
@@ -62,3 +63,28 @@ class MinioClient:
             written.append(object_name)
 
         return written
+
+    def write_snapshot(
+        self,
+        kind: Literal["users", "channels"],
+        rows: list[dict[str, Any]],
+        snapshot_date: date,
+    ) -> str | None:
+        """One file per kind per day, so a re-sync the same day overwrites it."""
+        if not rows:
+            return None
+        schema = USER_SCHEMA if kind == "users" else CHANNEL_SCHEMA
+        object_name = f"slack/{kind}/{snapshot_date:%Y-%m-%d}.parquet"
+
+        buffer = io.BytesIO()
+        pq.write_table(rows_to_table(rows, schema), buffer)
+        size = buffer.getbuffer().nbytes
+        buffer.seek(0)
+
+        self._client.put_object(
+            bucket_name=self._bucket,
+            object_name=object_name,
+            data=buffer,
+            length=size,
+        )
+        return object_name

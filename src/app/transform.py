@@ -37,3 +37,35 @@ def message_to_row(
         "ingested_at": ingested_at,
         "source": source,
     }
+
+
+def user_to_row(user: dict[str, Any], *, ingested_at: datetime) -> dict[str, Any]:
+    profile = user.get("profile") or {}
+    return {
+        "user_id": user["id"],
+        "name": user.get("name"),
+        "real_name": user.get("real_name") or profile.get("real_name"),
+        "display_name": profile.get("display_name") or None,
+        "is_bot": bool(user.get("is_bot")),
+        "deleted": bool(user.get("deleted")),
+        "tz": user.get("tz"),
+        "raw_json": json.dumps(user, ensure_ascii=False, sort_keys=True),
+        "ingested_at": ingested_at,
+    }
+
+
+def channel_to_row(channel: dict[str, Any], *, ingested_at: datetime) -> dict[str, Any]:
+    created = channel.get("created")
+    return {
+        "channel_id": channel["id"],
+        "name": channel.get("name"),
+        "is_private": bool(channel.get("is_private")),
+        "is_archived": bool(channel.get("is_archived")),
+        "created_at": _EPOCH + timedelta(seconds=created) if created else None,
+        "creator": channel.get("creator"),
+        "topic": (channel.get("topic") or {}).get("value") or None,
+        "purpose": (channel.get("purpose") or {}).get("value") or None,
+        "num_members": channel.get("num_members"),
+        "raw_json": json.dumps(channel, ensure_ascii=False, sort_keys=True),
+        "ingested_at": ingested_at,
+    }

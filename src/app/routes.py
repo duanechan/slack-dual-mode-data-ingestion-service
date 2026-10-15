@@ -68,3 +68,11 @@ def realtime_start(realtime: Realtime):
 def realtime_stop(realtime: Realtime):
     stopped = realtime.stop()
     return {"stopped": stopped, **realtime.status()}
+
+
+@router.post("/metadata/sync", tags=["metadata"])
+def metadata_sync(jobs: Jobs):
+    try:
+        return jobs.sync_metadata()
+    except SlackApiError as e:
+        raise HTTPException(502, f"slack error: {e.response.get('error')}") from e

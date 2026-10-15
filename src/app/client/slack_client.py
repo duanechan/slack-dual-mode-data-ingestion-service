@@ -33,3 +33,26 @@ class SlackClient:
             next_cursor = res.get("response_metadata", {}).get("next_cursor")
             if not next_cursor:
                 break
+
+    def iter_users(self, limit: int = 200) -> Iterator[list[dict[str, Any]]]:
+        cursor: str | None = None
+        while True:
+            res = self._client.users_list(cursor=cursor, limit=limit)
+            yield res.get("members", [])
+            cursor = res.get("response_metadata", {}).get("next_cursor")
+            if not cursor:
+                break
+
+    def iter_channels(self, limit: int = 200) -> Iterator[list[dict[str, Any]]]:
+        cursor: str | None = None
+        while True:
+            res = self._client.conversations_list(
+                cursor=cursor,
+                limit=limit,
+                types="public_channel",
+                exclude_archived=False,
+            )
+            yield res.get("channels", [])
+            cursor = res.get("response_metadata", {}).get("next_cursor")
+            if not cursor:
+                break

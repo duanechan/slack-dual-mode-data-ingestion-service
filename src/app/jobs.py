@@ -31,6 +31,9 @@ class JobManager:
             self._pool.submit(self._run, cid, ingested_at, page_size)
         return started
 
+    def sync_metadata(self) -> dict[str, int]:
+        return self._service.sync_metadata(datetime.now(UTC))
+
     def pause(self) -> None:
         self.running.clear()
 

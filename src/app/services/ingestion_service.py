@@ -6,7 +6,7 @@ from app.client.slack_client import SlackClient
 from app.storage.checkpoint_store import CheckpointStore
 from app.storage.minio_client import MinioClient
 from app.storage.storage import ts_bounds
-from app.transform import message_to_row
+from app.transform import channel_to_row, message_to_row, user_to_row
 
 
 class IngestionService:
@@ -53,3 +53,19 @@ class IngestionService:
             if running is not None:
                 running.wait()
         return total
+
+    def sync_metadata(self, ingested_at: datetime) -> dict[str, int]:
+        users = [
+            user_to_row(user, ingested_at=ingested_at)
+            for page in self._slack.iter_users()
+            for user in page
+        ]
+        channels = [
+            channel_to_row(channel, ingested_at=ingested_at)
+            for page in self._slack.iter_channels()
+            for channel in page
+        ]
+        snapshot_date = ingested_at.date()
+        self._minio.write_snapshot("users", users, snapshot_date)
+        self._minio.write_snapshot("channels", channels, snapshot_date)
+        return {"users": len(users), "channels": len(channels)}
