@@ -1,6 +1,7 @@
 import threading
 from collections.abc import Callable
 from datetime import datetime
+from typing import Any
 
 from app.client.slack_client import SlackClient
 from app.storage.checkpoint_store import CheckpointStore
@@ -45,14 +46,47 @@ class IngestionService:
             if not rows:
                 continue
             self._minio.write_page(mode="historical", rows=rows)
+            reply_count = self._backfill_replies(channel_id, messages, ingested_at)
             oldest_ts, _ = ts_bounds(rows)
             self._checkpoints.save(channel_id=channel_id, oldest_ts=oldest_ts)
-            total += len(rows)
+            total += len(rows) + reply_count
             if on_page is not None:
-                on_page(channel_id, len(rows))
+                on_page(channel_id, len(rows) + reply_count)
             if running is not None:
                 running.wait()
         return total
+
+    def _backfill_replies(
+        self,
+        channel_id: str,
+        messages: list[dict[str, Any]],
+        ingested_at: datetime,
+    ) -> int:
+        """Write the replies of every threaded parent on this page.
+
+        conversations.history returns parents only. This runs before the page
+        checkpoint is saved, so a crash re-fetches the page with its replies.
+        """
+        written = 0
+        for message in messages:
+            if not message.get("reply_count"):
+                continue
+            thread_ts = message.get("thread_ts", message["ts"])
+            for replies in self._slack.iter_thread_replies(channel_id, thread_ts):
+                rows = [
+                    message_to_row(
+                        message=reply,
+                        channel_id=channel_id,
+                        ingested_at=ingested_at,
+                        source="historical",
+                    )
+                    for reply in replies
+                    if reply["ts"] != thread_ts  # the parent comes back too
+                ]
+                if rows:
+                    self._minio.write_page(mode="historical", rows=rows)
+                    written += len(rows)
+        return written
 
     def sync_metadata(self, ingested_at: datetime) -> dict[str, int]:
         users = [

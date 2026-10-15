@@ -56,3 +56,16 @@ class SlackClient:
             cursor = res.get("response_metadata", {}).get("next_cursor")
             if not cursor:
                 break
+
+    def iter_thread_replies(
+        self, channel_id: str, thread_ts: str, limit: int = 200
+    ) -> Iterator[list[dict[str, Any]]]:
+        cursor: str | None = None
+        while True:
+            res = self._client.conversations_replies(
+                channel=channel_id, ts=thread_ts, cursor=cursor, limit=limit
+            )
+            yield res.get("messages", [])
+            cursor = res.get("response_metadata", {}).get("next_cursor")
+            if not cursor:
+                break
