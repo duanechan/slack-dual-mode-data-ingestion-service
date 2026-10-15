@@ -9,5 +9,5 @@ FROM s3(
      subtype Nullable(String), edited_ts Nullable(String), raw_json String,
      ingested_at DateTime64(6, ''UTC''), source String'
 )
-ORDER BY version_ts DESC
+ORDER BY version_ts DESC, ingested_at DESC
 LIMIT 1 BY channel_id, ts;
