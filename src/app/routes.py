@@ -1,9 +1,11 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
+from slack_sdk.errors import SlackApiError
 
 from app.jobs import JobManager
+from app.services.realtime_service import RealtimeService
 
 router = APIRouter()
 
@@ -40,5 +42,29 @@ def resume(jobs: Jobs):
 
 
 @router.get("/status")
-def status(jobs: Jobs):
-    return jobs.status()
+def status(jobs: Jobs, realtime: Realtime):
+    return {**jobs.status(), "realtime": realtime.status()}
+
+
+def get_realtime(request: Request) -> RealtimeService:
+    return request.app.state.realtime
+
+
+Realtime = Annotated[RealtimeService, Depends(get_realtime)]
+
+
+@router.post("/realtime/start", tags=["realtime"])
+def realtime_start(realtime: Realtime):
+    if not realtime.configured:
+        raise HTTPException(503, "SLACK_APP_TOKEN is not set")
+    try:
+        started = realtime.start()
+    except SlackApiError as e:
+        raise HTTPException(502, f"could not open Socket Mode: {e}") from e
+    return {"started": started, **realtime.status()}
+
+
+@router.post("/realtime/stop", tags=["realtime"])
+def realtime_stop(realtime: Realtime):
+    stopped = realtime.stop()
+    return {"stopped": stopped, **realtime.status()}

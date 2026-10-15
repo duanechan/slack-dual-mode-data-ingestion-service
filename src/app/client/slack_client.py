@@ -14,6 +14,7 @@ class SlackClient:
         cursor: str | None = None,
         limit: int | None = None,
         latest: str | None = None,
+        oldest: str | None = None,
     ) -> Iterator[list[dict[str, Any]]]:
         next_cursor = cursor
         while True:
@@ -22,6 +23,7 @@ class SlackClient:
                 cursor=next_cursor,
                 limit=limit,
                 latest=latest,
+                oldest=oldest,
                 inclusive=False,
             )
 

@@ -11,6 +11,7 @@ from app.client.slack_client import SlackClient
 from app.jobs import JobManager
 from app.routes import router
 from app.services.ingestion_service import IngestionService
+from app.services.realtime_service import RealtimeService
 from app.settings import Settings
 from app.storage.checkpoint_store import CheckpointStore
 from app.storage.minio_client import MinioClient
@@ -31,14 +32,21 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         secret_key=settings.MINIO_SECRET_KEY.get_secret_value(),
         secure=settings.MINIO_SECURE,
     )
-    service = IngestionService(
+    minio = MinioClient(client=minio_client, bucket=settings.MINIO_BUCKET)
+    checkpoints = CheckpointStore(minio_client, settings.MINIO_BUCKET)
+    jobs = JobManager(IngestionService(slack, minio, checkpoints))
+    app_token = settings.SLACK_APP_TOKEN
+    app.state.jobs = jobs
+    app.state.realtime = RealtimeService(
         slack,
-        MinioClient(client=minio_client, bucket=settings.MINIO_BUCKET),
-        CheckpointStore(minio_client, settings.MINIO_BUCKET),
+        minio,
+        checkpoints,
+        running=jobs.running,  # one pause switch for both modes
+        app_token=app_token.get_secret_value() if app_token else None,
     )
-    app.state.jobs = JobManager(service)
     yield
-    app.state.jobs.shutdown()
+    app.state.realtime.stop()
+    jobs.shutdown()
 
 
 app = FastAPI(title="slack-dual-mode-data-ingestion-service", lifespan=lifespan)

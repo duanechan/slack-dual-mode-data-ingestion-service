@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     JWT_EXPIRY_MINUTES: int
 
     # Slack
+    SLACK_APP_TOKEN: SecretStr | None = None
     SLACK_BOT_TOKEN: SecretStr
 
     # MinIO
@@ -58,6 +59,13 @@ class Settings(BaseSettings):
             raise ValueError("value cannot be empty")
         if "REPLACE_WITH_" in value:
             raise ValueError("placeholder value detected, set a real value in .env")
+        return v
+
+    @field_validator("SLACK_APP_TOKEN")
+    @classmethod
+    def must_be_app_token(cls, v: SecretStr | None) -> SecretStr | None:
+        if v is not None and not v.get_secret_value().startswith("xapp-"):
+            raise ValueError("expected an app-level token starting with 'xapp-'")
         return v
 
     @field_validator("SLACK_BOT_TOKEN")
