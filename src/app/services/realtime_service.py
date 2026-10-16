@@ -88,7 +88,7 @@ class RealtimeService:
         return {
             "running": self._client is not None,
             "events_written": self._written,
-            "queued": self._queue.qsize(),
+            "queued": self._queue.unfinished_tasks,  # includes the one in hand
             "last_error": self._last_error,
         }
 
@@ -117,10 +117,13 @@ class RealtimeService:
                 channel_id, message = self._queue.get(timeout=0.5)
             except queue.Empty:
                 continue
-            while not self._running.wait(timeout=0.5):
-                if self._stop.is_set():
-                    return
-            self._write(channel_id, message)
+            try:
+                while not self._running.wait(timeout=0.5):
+                    if self._stop.is_set():
+                        return
+                self._write(channel_id, message)
+            finally:
+                self._queue.task_done()
 
     def _write(self, channel_id: str, message: dict[str, Any]) -> None:
         try:
